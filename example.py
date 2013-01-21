@@ -9,7 +9,7 @@ Flask-Login, including remember me functionality.
 :license:   MIT/X11, see LICENSE for more details.
 """
 from flask import Flask
-from flask_olinauth import OlinAuth, auth_required, current_user
+from flask.exti.olinauth import OlinAuth, auth_required, current_user
 app = Flask(__name__)
 
 SECRET_KEY = "yeah, not actually a secret"
