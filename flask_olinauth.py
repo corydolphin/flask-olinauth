@@ -26,20 +26,26 @@ class OlinAuth(object):
             return logout()
 
 
-def load_session(sessionid):
+def load_session():
+    """Returns an OlinAuth user dict and stores the sessionid and user in
+    this application's session
+    """
+    sessionid = request.form.get('sessionid') or request.args.get('sessionid')
+    if not sessionid:
+        return None
     r = requests.get('http://olinapps.com/api/me',
         params={"sessionid": sessionid})
     if r.status_code == 200 and r.json() and 'user' in r.json():
         session['sessionid'] = sessionid
-        session['user'] = r.json['user']
-        return True
-    return False
+        session['user'] = r.json()['user']
+        return r.json()
+    return None
 
 
 def login():
     if request.method == 'POST':
         # External login.
-        if 'sessionid' in request.form and load_session(request.form.get('sessionid')):
+        if load_session():
             return redirect('/')
         else:
             session.pop('sessionid', None)
@@ -53,7 +59,13 @@ def logout():
 
 
 def get_session_user():
-    return session.get('user', None)
+    session_user = session.get('user', None)
+    if session_user:
+        return session_user
+    else:
+        if load_session():
+            return session.get('user', None)
+    return None
 
 
 def get_session_email():

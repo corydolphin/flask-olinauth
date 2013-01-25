@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='Flask-OlinAuth',
-    version='1.0',
+    version='1.1',
     url='http://www.corydolphin.com/flask-olinauth',
     license='MIT',
     author='Cory Dolphin',

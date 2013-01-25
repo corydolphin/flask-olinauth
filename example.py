@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Flask-Login example
+Flask-OlinAuth example
 ===================
-This is a small application that provides a trivial demonstration of
-Flask-Login, including remember me functionality.
+This is a small application that provides an implementation of Olin's
+authentication protocol.
 
-:copyright: (C) 2011 by Matthew Frazier.
+:copyright: (C) 2013 by Cory Dolphin.
 :license:   MIT/X11, see LICENSE for more details.
 """
-from flask import Flask
-from flask.exti.olinauth import OlinAuth, auth_required, current_user
+from flask import Flask, url_for
+from flask.ext.olinauth import OlinAuth, auth_required, current_user
 app = Flask(__name__)
 
 SECRET_KEY = "yeah, not actually a secret"
@@ -17,8 +17,8 @@ DEBUG = True
 
 app.config.from_object(__name__)
 
-oa = OlinAuth(app)
-#initial OlinAuth, with callback host of localhost:5000
+oa = OlinAuth(app, 'localhost:5000')
+#initial OlinAuth, with callback host of localhost:5000, for local server
 oa.init_app(app, 'localhost:5000')
 
 
@@ -27,7 +27,7 @@ def index():
     if current_user:
         responseString = "Awesome index, guess what? %s is logged in. Sweet, right?" % current_user['id']
     else:
-        responseString = "It is kind of lonely here... No users are logged in"
+        responseString = "<html>It is kind of lonely here... No users are logged in. <a href=%s>Checkout my secret</a> </html>" % url_for('secret')
     return responseString
 
 
