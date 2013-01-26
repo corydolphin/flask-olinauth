@@ -32,6 +32,9 @@ class FlaskOlinAuthTest(unittest.TestCase):
         rv = self.app.get('/secret?sessionid=%s' % 1)  # invalid session
         assert rv.status_code == 302
 
+#TODO: add a browser based test, filling out the form redirected to and ensure that
+#sessions properly work using cookies
+
 
 def get_sessionid():
     payload = {"username": os.environ.get("OLIN-USERNAME", ""),

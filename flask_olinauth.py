@@ -2,8 +2,9 @@ from functools import wraps
 from flask import current_app, request, session, redirect
 from werkzeug.local import LocalProxy
 import requests
+import urllib
 
-OLINAPPS_STR = 'http://olinapps.com/external?callback=http://%s/login'
+OLINAPPS_STR = 'http://olinapps.com/external?%s'
 
 
 class OlinAuth(object):
@@ -18,17 +19,21 @@ class OlinAuth(object):
         self.host_name = host_name  # used to generate callback url
 
         @app.route('/login', methods=['GET', 'POST'])
-        def _login():
-            return login()
+        def login():
+            return __login()
 
         @app.route('/logout', methods=['GET', 'POST'])
-        def _logout():
-            return logout()
+        def logout():
+            return __logout()
 
 
 def load_session():
     """Returns an OlinAuth user dict and stores the sessionid and user in
-    this application's session
+    this application's session.
+
+    TODO: support caching? When the sessionid is specified as a url argument,
+    thie application will make a new web request each time, which is a waste.
+    Perhaps we can check if there exists a cache on the app and use it.
     """
     sessionid = request.form.get('sessionid') or request.args.get('sessionid')
     if not sessionid:
@@ -42,23 +47,32 @@ def load_session():
     return None
 
 
-def login():
+def __login():
+    """Handles the POST from Olin Auth's callback, and redirects to the original
+    destination specified in the :destination: querystring.
+    """
     if request.method == 'POST':
         # External login.
         if load_session():
-            return redirect('/')
+            return redirect(request.args.get("destination") or "/")
         else:
             session.pop('sessionid', None)
     return "Please authenticate with Olin Apps to view."
 
 
-def logout():
+def __logout():
+    """ Provides a logout view to the application, removing the user from the
+    session and removing the session id. TODO: tell olinapps to deauth user?
+    """
     session.pop('sessionid', None)
     session.pop('user', None)
     return redirect('/')
 
 
 def get_session_user():
+    """ Returns the current session's user, or the user specified by the
+    sessionid url parameter.
+    """
     session_user = session.get('user', None)
     if session_user:
         return session_user
@@ -94,7 +108,16 @@ def auth_required(fn):
         if current_user:
             return fn(*args, **kwargs)
         else:   # TODO: support SSL?
-            return redirect(OLINAPPS_STR % current_app.olin_auth.host_name)
+            # callback to pass to olinapps, urlencode original url to allow
+            # a user to be redirected to the original view they were accessing
+            cbstring = "http://%s/login?destination=%s" % (
+                current_app.olin_auth.host_name,
+                request.url
+                )
+            return redirect(OLINAPPS_STR % urllib.urlencode({
+                "callback": cbstring
+                })
+            )
 
     return decorated_view
 
