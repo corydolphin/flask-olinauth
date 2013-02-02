@@ -4,7 +4,7 @@ from werkzeug.local import LocalProxy
 import requests
 import urllib
 
-__version__ = "1.3.5"
+__version__ = "1.3.6"
 OLINAPPS_STR = 'http://olinapps.com/external?%s'
 
 
