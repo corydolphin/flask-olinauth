@@ -11,7 +11,6 @@ authentication protocol.
 from flask import Flask, url_for
 from flask.ext.olinauth import OlinAuth, auth_required, current_user
 app = Flask(__name__)
-
 SECRET_KEY = "yeah, not actually a secret"
 DEBUG = True
 
@@ -23,9 +22,10 @@ oa.init_app(app, 'localhost:5000')
 
 
 @app.route("/")
-def index():
-    if current_user:
-        responseString = "Awesome index, guess what? %s is logged in. Sweet, right?" % current_user['id']
+def index():  # this view is public, does not require authentication
+    if current_user:  # if a user is logged in and authenticated
+        responseString = "Awesome index, guess what? %s is logged in. Sweet,\
+         right? <a href=%s> Logout</a>" % (current_user['id'], url_for('__logout'))
     else:
         responseString = "<html>It is kind of lonely here... No users are logged in. <a href=%s>Checkout my secret</a> </html>" % url_for('secret')
     return responseString
@@ -33,7 +33,7 @@ def index():
 
 @app.route("/secret")
 @auth_required
-def secret():
+def secret():  # this view requires authentication, and will redirect if not.
     return "I wouldn't normally show you this, but since %s is logged in, here is the secret: 42" % current_user['id']
 
 

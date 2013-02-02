@@ -4,13 +4,13 @@ from werkzeug.local import LocalProxy
 import requests
 import urllib
 
-__version__ = "1.3.6"
+__version__ = "1.0"
 OLINAPPS_STR = 'http://olinapps.com/external?%s'
 
 
 class OlinAuth(object):
     def __init__(self, app=None, host_name=None):
-        if app is not None:
+        if app is not None and host_name is not None:
             self.init_app(app, host_name)
         else:
             self.app = None
@@ -18,14 +18,30 @@ class OlinAuth(object):
     def init_app(self, app, host_name):
         app.olin_auth = self
         self.host_name = host_name  # used to generate callback url
+        app.add_url_rule('/olinauthlogin', view_func=OlinAuth.__login, methods=['GET', 'POST'])
+        app.add_url_rule('/olinauthlogout', view_func=OlinAuth.__logout, methods=['GET', 'POST'])
 
-        @app.route('/login', methods=['GET', 'POST'])
-        def login():
-            return __login()
+    @staticmethod
+    def __login():
+        """Handles the POST from Olin Auth's callback, and redirects to the original
+        destination specified in the :destination: querystring.
+        """
+        if request.method == 'POST':
+            # External login.
+            if load_session():
+                return redirect(request.args.get("destination") or "/")
+            else:
+                session.pop('sessionid', None)
+        return "Please authenticate with Olin Apps to view."
 
-        @app.route('/logout', methods=['GET', 'POST'])
-        def logout():
-            return __logout()
+    @staticmethod
+    def __logout():
+        """ Provides a logout view to the application, removing the user from the
+        session and removing the session id. TODO: tell olinapps to deauth user?
+        """
+        session.pop('sessionid', None)
+        session.pop('user', None)
+        return redirect('/')
 
 
 def load_session():
@@ -48,28 +64,6 @@ def load_session():
     return None
 
 
-def __login():
-    """Handles the POST from Olin Auth's callback, and redirects to the original
-    destination specified in the :destination: querystring.
-    """
-    if request.method == 'POST':
-        # External login.
-        if load_session():
-            return redirect(request.args.get("destination") or "/")
-        else:
-            session.pop('sessionid', None)
-    return "Please authenticate with Olin Apps to view."
-
-
-def __logout():
-    """ Provides a logout view to the application, removing the user from the
-    session and removing the session id. TODO: tell olinapps to deauth user?
-    """
-    session.pop('sessionid', None)
-    session.pop('user', None)
-    return redirect('/')
-
-
 def get_session_user():
     """ Returns the current session's user, or the user specified by the
     sessionid url parameter.
@@ -88,6 +82,12 @@ def get_session_email():
     if not userinfo:
         return None
     return str(userinfo['id']) + '@' + str(userinfo['domain'])
+
+
+def logout_user():
+    '''Logs out the current_user, removing their information from the session. TODO: notify olinapps?'''
+    session.pop('sessionid', None)
+    session.pop('user', None)
 
 
 def auth_required(fn):
@@ -111,7 +111,7 @@ def auth_required(fn):
         else:   # TODO: support SSL?
             # callback to pass to olinapps, urlencode original url to allow
             # a user to be redirected to the original view they were accessing
-            cbstring = "http://%s/login?destination=%s" % (
+            cbstring = "http://%s/olinauthlogin?destination=%s" % (
                 current_app.olin_auth.host_name,
                 request.url
                 )

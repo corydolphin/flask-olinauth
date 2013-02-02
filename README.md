@@ -1,9 +1,7 @@
 # Flask-OlinAuth
 
-Flask-OlinAuth implements OlinApps auth. It automatically provides a `/login` and `/logout` route
-to the application, handling the process of actually authenticating a user with olinapps. 
-Currently the plugin is inflexible and would not work if you override one of the routes. It also does not
-use cryptographically secure cookies, which it 'should'.
+Flask-OlinAuth implements OlinApps auth. It automatically provides a `/olinauthlogin` and `/olinauthlogout` route
+to the application, handling the process of actually authenticating a user with olinapps.
 
 At a high level, Flask-OlinAuth provides two useful pieces for your application,
 both of which are demonstrated in `example.py`.
@@ -16,6 +14,10 @@ arguments, if not.
 ## `current_user`
 A nice local proxy for all of your views to get the current user, formatted as
 a dictionary.
+
+## `logout_user`
+Will log out the currently authenticated user, allowing you to simply
+create your own logout view.
 
 Flask-OlinAuth is very heavily inspired by Flask-Login, with structure, and
 functionality adopted, and much knowledge gained.
